@@ -1,0 +1,88 @@
+a!localVariables(
+  local!daysInYear: 365,
+  local!daysInMonth: 30,
+  /* Approximation for simplicity */
+  /* Input: DateTime fields */
+  local!startDateTime: ri!startDateTime,
+  /* Replace with your actual input */
+  local!endDateTime: ri!endDateTime,
+  /* Replace with your actual input */
+  /* Calculate total days, handling nulls */
+  local!totalDays: tointeger(
+    if(
+      or(
+        isnull(local!startDateTime),
+        isnull(local!endDateTime)
+      ),
+      null,
+      /* Calculate the difference in days manually */
+      (
+        year(local!endDateTime) - year(local!startDateTime)
+      ) * local!daysInYear + (
+        month(local!endDateTime) - month(local!startDateTime)
+      ) * local!daysInMonth + (
+        day(local!endDateTime) - day(local!startDateTime)
+      )
+    )
+  ),
+  /* Calculate years, months, and remaining days only if totalDays is not null */
+  local!years: tointeger(
+    if(
+      isnull(local!totalDays),
+      null,
+      floor(local!totalDays / local!daysInYear)
+    )
+  ),
+  local!remainingDaysAfterYears: tointeger(
+    if(
+      isnull(local!totalDays),
+      null,
+      mod(local!totalDays, local!daysInYear)
+    )
+  ),
+  local!months: tointeger(
+    if(
+      isnull(local!remainingDaysAfterYears),
+      null,
+      floor(
+        local!remainingDaysAfterYears / local!daysInMonth
+      )
+    )
+  ),
+  local!remainingDays: tointeger(
+    if(
+      isnull(local!remainingDaysAfterYears),
+      null,
+      mod(
+        local!remainingDaysAfterYears,
+        local!daysInMonth
+      )
+    )
+  ),
+  /* Create a list of non-zero components */
+  local!components: a!flatten(
+    {
+      if(
+        local!years > 0,
+        local!years & if(local!years > 1, " years", "year"),
+        {}
+      ),
+      if(
+        local!months > 0,
+        local!months & if(local!months > 1, " months", " months"),
+        {}
+      ),
+      if(
+        local!remainingDays > 0,
+        local!remainingDays & " days",
+        {}
+      )
+    }
+  ),
+  /* Return the result as a concatenated string or a default message for null */
+  if(
+    isnull(local!totalDays),
+    "Date values are missing",
+    joinarray(local!components, ", ")
+  )
+)
