@@ -1,0 +1,175 @@
+a!localVariables(
+  local!columns: {
+    a!map(
+      name: "TO-DO",
+      cards: {
+        a!map(name: "ONE", icon: "user"),
+        a!map(name: "TWO", icon: "helicopter"),
+        a!map(name: "THREE", icon: "cog"),
+        a!map(name: "FOUR", icon: "stethoscope"),
+        a!map(name: "FIVE", icon: "piggy-bank"),
+        a!map(name: "SIX", icon: "user-ninja"),
+      }
+    ),
+    a!map(
+      name: "DOING",
+      cards: {}
+    ),
+    a!map(
+      name: "DONE",
+      cards: {}
+    ),
+  },
+  local!pickedCard,
+  local!tempCard,
+  a!columnsLayout(
+    showDividers: true,
+    columns: a!forEach(
+      items: local!columns,
+      expression: a!localVariables(
+        local!column: fv!item,
+        local!columnIndex: fv!index,
+        a!columnLayout(
+          contents: {
+            a!cardLayout(
+              showBorder: false,
+              contents: {
+                a!cardLayout(
+                  marginBelow: "STANDARD",
+                  showBorder: false,
+                  style: "STANDARD",
+                  link: if(
+                    a!isNotNullOrEmpty(local!pickedCard),
+                    a!dynamicLink(
+                      saveInto: {
+                        a!save(
+                          target: local!columns[local!pickedCard.column].cards,
+                          value: remove(
+                            local!columns[local!pickedCard.column].cards,
+                            local!pickedCard.card
+                          )
+                        ),
+                        a!save(
+                          target: local!columns[local!columnIndex].cards,
+                          value: insert(
+                            local!columns[local!columnIndex].cards,
+                            local!tempCard,
+                            1
+                          )
+                        ),
+                        a!save(
+                          target: {local!pickedCard, local!tempCard},
+                          value: null
+                        )
+                      }
+                    ),
+                    null
+                  ),
+                  contents: a!richTextDisplayField(
+                    labelPosition: "COLLAPSED",
+                    value: a!richTextHeader(
+                      text: fv!item.name
+                    )
+                  )
+                ),
+                a!forEach(
+                  items: local!column.cards,
+                  expression: a!cardLayout(
+                    marginBelow: "STANDARD",
+                    shape: "ROUNDED",
+                    showBorder: false,
+                    showShadow: true,
+                    style: if(
+                      a!isNotNullOrEmpty(local!pickedCard),
+                      if(
+                        and(
+                          local!pickedCard.column = local!columnIndex,
+                          local!pickedCard.card = fv!index
+                        ),
+                        "ACCENT",
+                        "NONE"
+                      ),
+                      "NONE"
+                    ),
+                    link: if(
+                      a!isNullOrEmpty(local!pickedCard),
+                      a!dynamicLink(
+                        saveInto: {
+                          a!save(
+                            target: local!tempCard,
+                            value: fv!item
+                          ),
+                          a!save(
+                            target: local!pickedCard,
+                            value: a!map(
+                              column: local!columnIndex,
+                              card: fv!index
+                            )
+                          )
+                        }
+                      ),
+                      if(
+                        and(
+                          and(
+                            local!pickedCard.column = local!columnIndex,
+                            local!pickedCard.card = fv!index
+                          ),
+                        ),
+                        a!dynamicLink(value: null, saveInto: local!pickedCard),
+                        a!dynamicLink(
+                          saveInto: {
+                            a!save(
+                              target: local!columns[local!pickedCard.column].cards,
+                              value: remove(
+                                local!columns[local!pickedCard.column].cards,
+                                local!pickedCard.card
+                              )
+                            ),
+                            a!save(
+                              target: local!columns[local!columnIndex].cards,
+                              value: insert(
+                                local!columns[local!columnIndex].cards,
+                                local!tempCard,
+                                fv!index + 1
+                              )
+                            ),
+                            a!save(
+                              target: {local!pickedCard, local!tempCard},
+                              value: null
+                            )
+                          }
+                        )
+                      )
+                    ),
+                    contents: a!sideBySideLayout(
+                      items: {
+                        a!sideBySideItem(
+                          width: "MINIMIZE",
+                          item: a!richTextDisplayField(
+                            labelPosition: "COLLAPSED",
+                            value: {
+                              a!richTextIcon(
+                                icon: fv!item.icon,
+                              ),
+                            }
+                          )
+                        ),
+                        a!sideBySideItem(
+                          item: a!paragraphField(
+                            labelPosition: "COLLAPSED",
+                            value: fv!item.name,
+                            saveInto: fv!item.name
+                          )
+                        )
+                      }
+                    )
+                  )
+                )
+              }
+            )
+          }
+        )
+      )
+    )
+  )
+)
