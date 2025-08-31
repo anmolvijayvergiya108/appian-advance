@@ -1,0 +1,325 @@
+a!localVariables(
+  local!holidayslist: todate(text("12/25/2024", "mm/dd/yyyy")),
+  local!select: {},
+  local!monthnames: {
+    "JANUARY",
+    "FEBRUARY",
+    "MARCH",
+    "APRIL",
+    "MAY",
+    "JUNE",
+    "JULY",
+    "AUGUST",
+    "SEPTEMBER",
+    "OCTOBER",
+    "NOVEMBER",
+    "DECEMBER"
+  },
+  local!month: month(today()),
+  local!year: year(today()),
+  local!week: {
+    "SUN",
+    "MON",
+    "TUE",
+    "WED",
+    "THU",
+    "FRI",
+    "SAT"
+  },
+  local!blank: a!forEach(
+    items: enumerate(
+      weekday(date(local!year, local!month, 1)) - 1
+    ),
+    expression: " "
+  ),
+  local!dates: append(
+    local!blank,
+    enumerate(daysinmonth(local!month, local!year)) + 1
+  ),
+  local!selectedDate: {},
+  local!holidays: {
+    if(
+      a!isNullOrEmpty(local!holidayslist),
+      {},
+      text(local!holidayslist, "DD")
+    )
+  },
+  local!currentMonth: {
+    a!forEach(
+      items: local!selectedDate,
+      expression: if(
+        tointeger(text(fv!item, "MM")) = local!month,
+        text(fv!item, "dd"),
+        {}
+      )
+    )
+  },
+  {
+    a!cardLayout(
+      contents: {
+        a!columnsLayout(
+          columns: {
+            a!columnLayout(
+              contents: {
+                a!richTextDisplayField(
+                  labelPosition: "ABOVE",
+                  value: a!richTextItem(
+                    text: if(
+                      a!isNullOrEmpty(local!select),
+                      local!monthnames[local!month] & ", " & local!year,
+                      local!select[count(local!select)] & " " & local!monthnames[local!month] & ", " & local!year
+                    ),
+                    color: "STANDARD",
+                    size: "MEDIUM",
+                    style: "STRONG"
+                  ),
+                  preventWrapping: true,
+                  align: "CENTER",
+                  marginAbove: "STANDARD"
+                )
+              },
+              width: "NARROW"
+            ),
+            a!columnLayout(
+              contents: {
+                a!cardLayout(
+                  contents: {
+                    a!dropdownFieldByIndex(
+                      label: "Month",
+                      labelPosition: "ABOVE",
+                      placeholder: "Select Month",
+                      choiceLabels: { local!monthnames },
+                      value: local!month,
+                      saveInto: { local!month },
+                      searchDisplay: "AUTO",
+                      validations: {}
+                    )
+                  },
+                  height: "AUTO",
+                  style: "NONE",
+                  marginBelow: "STANDARD",
+                  showBorder: false,
+                  showShadow: true
+                )
+              },
+              width: "NARROW_PLUS"
+            ),
+            a!columnLayout(
+              contents: {
+                a!cardLayout(
+                  contents: {
+                    a!dropdownField(
+                      label: "Year",
+                      labelPosition: "ABOVE",
+                      placeholder: "Select Year",
+                      choiceLabels: enumerate(year(today()) + 10 - year(today())) + year(today()),
+                      choiceValues: enumerate(year(today()) + 10 - year(today())) + year(today()),
+                      value: local!year,
+                      saveInto: {
+                        local!year,
+                        a!save(
+                          local!blank,
+                          a!forEach(
+                            items: enumerate(weekday(1 / local!month / local!year, 1)),
+                            expression: " "
+                          )
+                        ),
+                        a!save(local!dates, null()),
+                        a!save(
+                          local!dates,
+                          append(
+                            local!blank,
+                            enumerate(daysinmonth(local!month, local!year)) + 1
+                          )
+                        )
+                      },
+                      searchDisplay: "AUTO",
+                      validations: {}
+                    )
+                  },
+                  height: "AUTO",
+                  style: "NONE",
+                  marginBelow: "STANDARD",
+                  showBorder: false,
+                  showShadow: true
+                )
+              },
+              width: "NARROW_PLUS"
+            )
+          },
+          alignVertical: "MIDDLE"
+        ),
+        a!columnsLayout(
+          columns: {
+            a!forEach(
+              items: enumerate(length(local!week)) + 1,
+              expression: a!columnLayout(
+                contents: a!cardLayout(
+                  contents: a!richTextDisplayField(
+                    labelPosition: "ABOVE",
+                    value: {
+                      if(
+                        (fv!item = 1),
+                        a!richTextItem(
+                          text: index(local!week, fv!item, ""),
+                          color: "NEGATIVE",
+                          size: "STANDARD",
+                          style: "STRONG"
+                        ),
+                        (
+                          if(
+                            (fv!item = 7),
+                            a!richTextItem(
+                              text: index(local!week, fv!item, ""),
+                              color: "ACCENT",
+                              size: "MEDIUM",
+                              style: "STRONG"
+                            ),
+                            a!richTextItem(
+                              text: index(local!week, fv!item, ""),
+                              size: "MEDIUM",
+                              style: "STRONG"
+                            )
+                          )
+                        )
+                      )
+                    },
+                    align: "CENTER"
+                  ),
+                  shape: "ROUNDED",
+                  showShadow: true()
+                )
+              )
+            )
+          }
+        ),
+        a!forEach(
+          items: enumerate(
+            if(
+              mod(length(local!dates), 7) = 0,
+              quotient(length(local!dates), 7),
+              sum(quotient(length(local!dates), 7) + 1)
+            )
+          ),
+          expression: a!columnsLayout(
+            columns: {
+              a!forEach(
+                items: (fv!item - 1) * 7 + enumerate(7) + 8,
+                expression: a!columnLayout(
+                  contents: a!cardLayout(
+                    contents: if(
+                      index(local!dates, fv!item, " ") = " ",
+                      a!richTextDisplayField(
+                        value: a!richTextItem(
+                          text: index(local!dates, fv!item, ""),
+                          size: "SMALL"
+                        ),
+                        align: "CENTER"
+                      ),
+                      a!richTextDisplayField(
+                        value: a!richTextItem(
+                          text: index(local!dates, fv!item, ""),
+                          size: "SMALL"
+                        ),
+                        align: "CENTER"
+                      )
+                    ),
+                    link: if(
+                      and(index(local!dates, fv!item, " ") = " "),
+                      null(),
+                      if(
+                        or(
+                          contains(
+                            tointeger(local!currentMonth),
+                            tointeger(fv!item - count(local!blank))
+                          ),
+                          contains(
+                            tointeger(local!holidays),
+                            tointeger(fv!item) - count(local!blank)
+                          )
+                        ),
+                        null,
+                        a!dynamicLink(
+                          saveInto: {
+                            a!save(
+                              local!select,
+                              append(
+                                local!select,
+                                index(local!dates, fv!item, " ")
+                              )
+                            ),
+                            a!save(
+                              local!selectedDate,
+                              append(
+                                local!selectedDate,
+                                text(
+                                  concat(
+                                    local!month,
+                                    "/",
+                                    local!select[count(local!select)],
+                                    "/",
+                                    local!year
+                                  ),
+                                  "MM/DD/YYYY"
+                                )
+                              )
+                            ),
+
+                          }
+                        )
+                      )
+                    ),
+                    style: if(
+                      and(
+                        contains(
+                          tointeger(local!currentMonth),
+                          tointeger(fv!item) - count(local!blank)
+                        ),
+                        a!isNotNullOrEmpty(local!select)
+                      ),
+                      "ACCENT",
+                      if(
+                        and(
+                          index(local!dates, fv!item, " ") = day(today()),
+                          local!month = month(today()),
+                          local!year = year(today())
+                        ),
+                        "SUCCESS",
+                        if(
+                          contains(
+                            tointeger(local!holidays),
+                            tointeger(fv!item) - count(local!blank)
+                          ),
+                          "WARN",
+                          "NONE"
+                        )
+                      )
+                    ),
+                    shape: "ROUNDED",
+                    showWhen: a!isNotNullOrEmpty(index(local!dates, fv!item, "")),
+                    showBorder: index(local!dates, fv!item, " ") <> " "
+                  )
+                )
+              )
+            }
+          )
+        ),
+        a!columnsLayout(
+          columns: {
+            a!columnLayout(contents: { a!textField(label: "Name") }),
+            a!columnLayout(
+              contents: { a!textField(label: "Department") }
+            )
+          },
+          showWhen: a!isNotNullOrEmpty(local!selectedDate)
+        )
+      },
+      height: "AUTO",
+      style: "NONE",
+      shape: "ROUNDED",
+      padding: "STANDARD",
+      marginBelow: "STANDARD",
+      showShadow: true
+    )
+  }
+)
